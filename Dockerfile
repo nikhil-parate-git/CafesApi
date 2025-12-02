@@ -1,12 +1,13 @@
-FROM maven:3.8.7-amazoncorretto-17 AS builder
-WORKDIR /app
+FROM eclipse-temurin:17-jdk-alpine AS build
+WORKDIR /workspace/app
+COPY mvnw .
+COPY .mvn .mvn
 COPY pom.xml .
-RUN mvn dependency:go-offline
-COPY src ./src
-RUN mvn clean package -DskipTests
+COPY src src
+RUN ./mvnw clean package -DskipTests
 
-FROM amazoncorretto:17-alpine
+FROM eclipse-temurin:17-jre-alpine
 WORKDIR /app
-COPY --from=builder /app/target/app.jar app.jar
+COPY --from=build /workspace/app/target/*.jar app.jar
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+ENTRYPOINT ["java", "-jar", "app.jar"]
