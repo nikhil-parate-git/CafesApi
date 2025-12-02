@@ -1,13 +1,16 @@
-FROM eclipse-temurin:17-jdk-alpine AS build
-WORKDIR /workspace/app
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
-COPY src src
-RUN ./mvnw clean package -DskipTests
-
-FROM eclipse-temurin:17-jre-alpine
+FROM maven:3.8.7-amazoncorretto-17 AS builder
 WORKDIR /app
-COPY --from=build /workspace/app/target/*.jar app.jar
+COPY . .
+RUN echo "=== Building project ==="
+RUN mvn clean package -DskipTests
+RUN echo "=== Checking JAR ==="
+RUN ls -la target/
+RUN find . -name "*.jar" -type f
+
+FROM amazoncorretto:17-alpine
+WORKDIR /app
+COPY --from=builder /app/target/app.jar app.jar
+RUN echo "=== JAR copied successfully ==="
+RUN ls -la
 EXPOSE 8080
 ENTRYPOINT ["java", "-jar", "app.jar"]
